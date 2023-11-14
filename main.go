@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"slices"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -19,6 +21,10 @@ type Customer struct {
 }
 
 var dataStore = []Customer{}
+
+func indexPage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "index.html")
+}
 
 func getCustomers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -45,11 +51,28 @@ func getCustomer(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func addCustomer(w http.ResponseWriter, r *http.Request) {
+
+	var data = Customer{}
+
+	reqBody, _ := ioutil.ReadAll(r.Body)
+
+	json.Unmarshal(reqBody, &data)
+
+	data.ID = uuid.NewString()
+
+	dataStore = append(dataStore,data)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{})
+}
+
 func main() {
 	//Initial seed
 	var custList = []Customer{
 		{
-			ID:        "1",
+			ID:        "57bddb9a-d4a5-4c26-81be-33c5392b83ad",
 			Name:      "Customer 1",
 			Role:      "Sales Engineer",
 			Email:     "cust1@dummy.com",
@@ -57,7 +80,7 @@ func main() {
 			Contacted: false,
 		},
 		{
-			ID:        "2",
+			ID:        "b7e0ee32-9280-46bb-a3a3-5a042d6eaf5f",
 			Name:      "Customer 2",
 			Role:      "Civil Engineer",
 			Email:     "cust2@dummy.com",
@@ -65,7 +88,7 @@ func main() {
 			Contacted: true,
 		},
 		{
-			ID:        "3",
+			ID:        "14bf757c-5162-4b4a-9469-fc713b296e68",
 			Name:      "Customer 3",
 			Role:      "Aeronautics Engineer",
 			Email:     "cust3@dummy.com",
@@ -79,9 +102,11 @@ func main() {
 	// Instantiate a new router by invoking the "NewRouter" handler
 	router := mux.NewRouter()
 
+	router.HandleFunc("/", indexPage).Methods("GET")
 	router.HandleFunc("/customers", getCustomers).Methods("GET")
 	router.HandleFunc("/customer/{id}", getCustomer).Methods("GET")
+	router.HandleFunc("/customer", addCustomer).Methods("POST")
 
-	fmt.Println("Server is starting on port 3000...")
-	http.ListenAndServe(":3000", router)
+	fmt.Println("Server is starting on port 8085...")
+	http.ListenAndServe(":8085", router)
 }
