@@ -80,19 +80,48 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{})
 }
 
+func updateCustomer(w http.ResponseWriter, r *http.Request) {
+
+	params := mux.Vars(r)
+	id := params["id"]
+
+	var data = Customer{}
+
+	reqBody, _ := ioutil.ReadAll(r.Body)
+
+	json.Unmarshal(reqBody, &data)
+
+	idx := slices.IndexFunc(dataStore, func(c Customer) bool { return c.ID == id })
+	w.Header().Set("Content-Type", "application/json")
+
+	if idx == -1 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{})
+
+	} else {
+		dataStore[idx].Name = data.Name
+		dataStore[idx].Role = data.Role
+		dataStore[idx].Email = data.Email
+		dataStore[idx].Phone = data.Phone
+		dataStore[idx].Contacted = data.Contacted
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{})
+	}
+}
+
 func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
 	w.Header().Set("Content-Type", "application/json")
 
-	idx := slices.IndexFunc(dataStore,func(c Customer) bool { return c.ID == id })
-	if idx == -1{
+	idx := slices.IndexFunc(dataStore, func(c Customer) bool { return c.ID == id })
+	if idx == -1 {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{})
 	} else {
-		
-
+		dataStore = append(dataStore[:idx], dataStore[idx+1:]...)
 		w.WriteHeader(http.StatusNoContent)
 		json.NewEncoder(w).Encode(map[string]string{})
 	}
@@ -143,9 +172,10 @@ func main() {
 	router.HandleFunc("/customers", getCustomers).Methods("GET")
 	router.HandleFunc("/customer/{id}", getCustomer).Methods("GET")
 	router.HandleFunc("/customer", addCustomer).Methods("POST")
+	router.HandleFunc("/customer/{id}", updateCustomer).Methods("PATCH")
 	router.HandleFunc("/customer/{id}", deleteCustomer).Methods("DELETE")
 
-	router.HandleFunc("*",routeNoMatch)
+	router.HandleFunc("*", routeNoMatch)
 
 	fmt.Println("Server is starting on port 8085...")
 	http.ListenAndServe(":8085", router)
