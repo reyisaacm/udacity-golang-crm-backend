@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gorilla/mux"
 )
@@ -27,10 +28,22 @@ func getCustomers(w http.ResponseWriter, r *http.Request) {
 }
 
 func getCustomer(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	params := mux.Vars(r)
+	id := params["id"]
 
-	json.NewEncoder(w).Encode(dataStore)
+	idx := slices.IndexFunc(dataStore, func(c Customer) bool { return c.ID == id })
+
+	if idx == -1 {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		returnData := dataStore[idx]
+
+		json.NewEncoder(w).Encode(returnData)
+	}
+
 }
 
 func main() {
@@ -68,7 +81,7 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/customers", getCustomers).Methods("GET")
-	router.HandleFunc("/customer/{i}",getCustomer).Methods("GET")
+	router.HandleFunc("/customer/{id}", getCustomer).Methods("GET")
 
 	fmt.Println("Server is starting on port 3000...")
 	http.ListenAndServe(":3000", router)
