@@ -22,6 +22,19 @@ type Customer struct {
 
 var dataStore = []Customer{}
 
+func generateUuid() string {
+	isUnique := false
+	var generatedId string
+	for !isUnique {
+		generatedId = uuid.NewString()
+		idx := slices.IndexFunc(dataStore, func(c Customer) bool { return c.ID == generatedId })
+		if idx == -1 {
+			isUnique = true
+		}
+	}
+	return generatedId
+}
+
 func indexPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "index.html")
 }
@@ -59,13 +72,37 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal(reqBody, &data)
 
-	data.ID = uuid.NewString()
-
-	dataStore = append(dataStore,data)
+	data.ID = generateUuid()
+	dataStore = append(dataStore, data)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{})
+}
+
+func deleteCustomer(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id := params["id"]
+
+	w.Header().Set("Content-Type", "application/json")
+
+	idx := slices.IndexFunc(dataStore,func(c Customer) bool { return c.ID == id })
+	if idx == -1{
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{})
+	} else {
+		
+
+		w.WriteHeader(http.StatusNoContent)
+		json.NewEncoder(w).Encode(map[string]string{})
+	}
+}
+
+func routeNoMatch(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{})
+
 }
 
 func main() {
@@ -106,6 +143,9 @@ func main() {
 	router.HandleFunc("/customers", getCustomers).Methods("GET")
 	router.HandleFunc("/customer/{id}", getCustomer).Methods("GET")
 	router.HandleFunc("/customer", addCustomer).Methods("POST")
+	router.HandleFunc("/customer/{id}", deleteCustomer).Methods("DELETE")
+
+	router.HandleFunc("*",routeNoMatch)
 
 	fmt.Println("Server is starting on port 8085...")
 	http.ListenAndServe(":8085", router)
