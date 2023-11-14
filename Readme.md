@@ -1,4 +1,5 @@
 # CRM Backend
+API backend to simulate CRM functionality
 
 ## How to run the application
 Simply just execute the following command:
