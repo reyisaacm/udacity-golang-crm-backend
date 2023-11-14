@@ -19,7 +19,14 @@ type Customer struct {
 
 var dataStore = []Customer{}
 
-func getCustomerList(w http.ResponseWriter, r *http.Request) {
+func getCustomers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(dataStore)
+}
+
+func getCustomer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
@@ -60,7 +67,8 @@ func main() {
 	// Instantiate a new router by invoking the "NewRouter" handler
 	router := mux.NewRouter()
 
-	router.HandleFunc("/customers", getCustomerList).Methods("GET")
+	router.HandleFunc("/customers", getCustomers).Methods("GET")
+	router.HandleFunc("/customer/{i}",getCustomer).Methods("GET")
 
 	fmt.Println("Server is starting on port 3000...")
 	http.ListenAndServe(":3000", router)
