@@ -33,14 +33,13 @@ func getCustomer(w http.ResponseWriter, r *http.Request) {
 
 	idx := slices.IndexFunc(dataStore, func(c Customer) bool { return c.ID == id })
 
+	w.Header().Set("Content-Type", "application/json")
 	if idx == -1 {
 		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{})
 	} else {
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-
 		returnData := dataStore[idx]
-
 		json.NewEncoder(w).Encode(returnData)
 	}
 
